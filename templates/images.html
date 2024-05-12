@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<title>Images</title>
+{% if file %}
+<img src="../static/images/{{ file }}" width="100%">
+{% else %}
+    <p>No image requested</p>
+    <p>Here is the list of possible images</p>
+    <ul id="imagelist">
+        {% for image in images %}
+            <li><a href="/images/{{ image }}">{{ image }}</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}

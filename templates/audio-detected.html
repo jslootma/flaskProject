@@ -1,0 +1,40 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {%  if category == 'error' %}
+            <div class="alert alert-danger alter-dismissible fade show" role="alert">
+                {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            {% else %}
+            <div class="alert alert-success alter-dismissible fade show" role="alert">
+                {{ message }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<form method="POST">
+    <h2>Detected class</h2>
+    <div class="form-group">
+        <label for="class_detected">Detected class</label>
+        <input type="text"
+               class="form-control"
+               id="class_detected"
+               name="class_detected"
+               placeholder="Enter the detected class">
+    </div>
+    <br>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<h2>Previous detections</h2>
+{%  for detection in values %}
+    <p>Datetime: {{ detection.datetime }}, Class: {{ detection.class_detected }}</p>
+{% endfor %}
