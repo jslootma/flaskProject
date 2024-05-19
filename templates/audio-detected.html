@@ -38,9 +38,11 @@
 {%  for detection in values %}
     <p>Datetime: {{ detection.datetime.strftime("%Y-%m-%d %H:%M:%S") }}, Location: {{ detection.filename }}, Class: {{ detection.class_detected }}</p>
     {% if detection.filename != "manual_input" %}
+        <div align="center">
         <audio controls>
-            <source src=src="../media/WAV/{{ detection.filename }}" type="audio/wav">
+            <source src="../static/WAV/{{ detection.filename }}" type="audio/wav">
             Your browser does not support the audio element.
         </audio>
+        </div>
     {% endif %}
 {% endfor %}

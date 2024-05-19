@@ -18,7 +18,7 @@ record_duration = 5  # 5-second recording duration
 continue_recording = True
 
 
-def end_recording():
+def end_recording(s, frame):  # Seems like signal and frame are unused, but function will receive 2 inputs
 	global continue_recording
 	print("Ctrl+C captured, ending recording.")
 	continue_recording = False
