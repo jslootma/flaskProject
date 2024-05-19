@@ -45,7 +45,7 @@ def record_and_save():
 		actual_sample_rate = len(samples) / record_duration
 		print(f"Actual sample rate: {actual_sample_rate} samples per second")
 		
-		timestring = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+		timestring = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 		
 		wav_filename = f"{recording_number:08}.{timestring}.wav"
 		wav_filepath = os.path.join(WAV_dir, wav_filename)
