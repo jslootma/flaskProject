@@ -2,7 +2,7 @@ import os.path
 import datetime as dt
 
 from flask import Flask, request, jsonify, render_template, flash  # pip install Flask
-from flask_sqlalchemy import SQLAlchemy # pip install Flask-SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy  # pip install Flask-SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = "beezyStudents-secretKey101!"
@@ -12,6 +12,7 @@ db_name = "database.db"
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_name}"  # This will create a sqlite database.db file in the same directory as the app.py file
 db = SQLAlchemy()
 
+dateformat = "%Y-%m-%d_%H-%M-%S"
 
 # Define the database models
 class AudioDetection(db.Model):
@@ -19,10 +20,12 @@ class AudioDetection(db.Model):
     # datetime = db.Column(db.String(100), nullable=False)
     # The datetime columns should be a datetime object, not a string
     datetime = db.Column(db.DateTime(timezone=True), nullable=False, unique=True)
-    class_detected = db.Column(db.String(50), nullable=False)
+    filename = db.Column(db.String(150), nullable=False)
+    class_detected = db.Column(db.String(50), nullable=True)
 
-    def __init__(self, class_detected):
-        self.datetime = dt.datetime.now()
+    def __init__(self, datetime, filename, class_detected=None):
+        self.datetime = datetime
+        self.filename = filename
         self.class_detected = class_detected
 
     def __repr__(self):
@@ -79,7 +82,7 @@ def pictures(file=None, file_list=[file for file in os.listdir("static/images/")
 
 
 # A webinterface to register detection and check the detections
-@app.route("/audio-detected/", methods=["GET", "POST"])
+@app.route("/audio-detections/", methods=["GET", "POST"])
 def audio():
     if request.method == "POST":
         data = request.form
@@ -87,7 +90,7 @@ def audio():
             flash("Invalid class detected", category="error")
             http_response_code = 400
         else:
-            audio_detection = AudioDetection(data["class_detected"])
+            audio_detection = AudioDetection(dt.datetime.now(), "manual_input", data["class_detected"])
             db.session.add(audio_detection)
             db.session.commit()
             flash("Detected class registered", category="success")
@@ -97,23 +100,50 @@ def audio():
     return render_template("audio-detected.html", values=AudioDetection.query.all()), http_response_code
 
 
+@app.route("/audio-detected/", methods=["GET", "POST"])
 @app.route("/audio-detected/<string:class_detected>", methods=["GET", "POST"])
-def audio_class(class_detected):
+def audio_class(class_detected=None):
     if request.method == "GET":
-        if class_detected not in ["Bee", "Hornet", "Other"]:
+        if class_detected not in ["Bee", "Hornet", "Other", None]:
             return jsonify({"message": "Invalid class detected"}), 400
         else:
             audio_detections = AudioDetection.query.filter_by(class_detected=class_detected).all()
-            dict_audio_detections = {detection.datetime.strftime("%Y-%m-%d %H:%M:%S"): detection.class_detected for detection in audio_detections}
+            dict_audio_detections = {detection.datetime.strftime("%Y-%m-%d_%H-%M-%S"): detection.class_detected for detection in audio_detections}
             return jsonify(dict_audio_detections), 200
     elif request.method == "POST":
         if class_detected not in ["Bee", "Hornet", "Other"]:
             return jsonify({"message": "Invalid class detected"}), 400
-        audio_detection = AudioDetection(class_detected)
+        data = request.json
+        audio_detection = AudioDetection(data["datetime"], data["filename"], class_detected)
         db.session.add(audio_detection)
         db.session.commit()
         return jsonify({"message": "Detected class registered"}), 201
 
+
+@app.route("/audio-recorded/", methods=["POST", "PATCH"])
+def audio_recorded():
+    if request.method == "POST":
+        data = request.json
+        if isinstance(data["datetime"], str):
+            data["datetime"] = dt.datetime.strptime(data["datetime"], "%Y-%m-%d_%H-%M-%S")
+        if "class_detected" not in data:
+            audio_detection = AudioDetection(data["datetime"], data["filename"])
+        elif data["class_detected"] not in ["Bee", "Hornet", "Other"]:
+            return jsonify({"message": "Invalid class detected"}), 400
+        else:
+            audio_detection = AudioDetection(data["datetime"], data["filename"], data["class_detected"])
+        db.session.add(audio_detection)
+        db.session.commit()
+        return jsonify(data), 201
+    else:
+        data = request.json
+        if isinstance(data["datetime"], str):
+            data["datetime"] = dt.datetime.strptime(data["datetime"], "%Y-%m-%d_%H-%M-%S")
+        audio_detection = AudioDetection.query.filter_by(datetime=data["datetime"]).first()
+        audio_detection.class_detected = data["class_detected"]
+        db.session.commit()
+
+        return jsonify({"message": "Patching data"}), 200
 
 if __name__ == '__main__':
     print("Starting the application")
